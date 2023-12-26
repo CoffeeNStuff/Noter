@@ -1,0 +1,11 @@
+# special syntax file 
+
+syn match NoterHeader0 " | 
+syn match NoterHeader1 " ||  
+syn match NoterHeader2 " |||  
+
+syn match NoterPoint  " -  
+syn match NoterComment " * 
+syn match NoterQuestion " ?  
+syn match NoterMultiQuestion " ??  
+
