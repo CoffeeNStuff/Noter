@@ -1,18 +1,3 @@
---[[
-|	Control Panel
-|	file.txt 
-|=================
-| Setting ~ Value  
-| Setting ~ Value  
-| Setting ~ Value  
-| Setting ~ Value  
-| Setting ~ Value  
-| Setting ~ Value  
-| Setting ~ Value  
-
-| Keystroke ~ to exit
-]] 
-
 require("lfs") 
 local json = require("json") 
 
@@ -26,6 +11,7 @@ function initConfig ()
 	"ConfigFileLocation": 	"~/.config/Noter/config.json",
 	"NoteFileLocation": 		"~/.config/Noter/config.json", 
 	"Syntax":					"Noter",
+	"ContinualFormatting":	false,
 	"AutoIndent":				true,
 	"AutoColapse": 			false,
 	"TextWidth":  				70 
@@ -59,9 +45,24 @@ function getCurrSet ()
 	return json.decode(file:read("a"))
 end 
 
+--[[
+ ┌──Control Panel───────┐
+ │Setting - Value       │
+ │Setting - Value       │
+ │Setting - Value       │
+ │Setting - Value       │
+ │Setting - Value       │
+ │Setting - Value       │
+ │Setting - Value       │
+ │Setting - Value       │
+ │Setting - Value       │
+ │                      │
+ │                      │
+ │                      │
+ │                      │
+ │                      │
+ │--- File.txt ---      │
+ └──────────────────────┘]]
 function modSet () 
 	local sets = getCurrSet () 
-	print(sets.Syntax)
 end 
-
-modSet(); 

@@ -1,2 +1,1 @@
--- require("Noter")
 print "hallo" 
