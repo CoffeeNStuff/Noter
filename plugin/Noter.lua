@@ -1,7 +1,6 @@
-local outline = require "tui.outline" 
+-- local outline = require "tui.outline" 
 
-outline.init()
-
+print "Hola alli" 
 --[[ hallo
 --bonjourno 
 ||
