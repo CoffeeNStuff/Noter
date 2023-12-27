@@ -1,6 +1,5 @@
 -- search through outline of notes 
 
-local O = {}
 
 -- open panel with contents 'loading ... ' 
 -- get file contents
@@ -9,6 +8,7 @@ local O = {}
 -- ability to jump to header/point 
 -- points and headers are colapsable in panel 
 
+local O = {} 
 
 O.init = function () 
 	O.txt = io.open(vim.fn.expand("%:p", "r")):read("a") 
@@ -33,7 +33,7 @@ O.init = function ()
 		O.Point = "-"
 		O.Question = "??"
 
-	O.refreshOutline()
+		O.refreshOutline()
 end 
 
 O.getLine = function () 
@@ -97,26 +97,30 @@ O.refreshOutline = function()
 		end 
 		O.line  = O.line + 1
 	end 
+
+	for i = 1, #O.sections do 
+		vim.api.nvim_win_set_cursor(vim.api.nvim_get_current_win, {O.sections[i][3], 1})
+	end 
 end
 end 
 
 
 --[[┌──────────────────────────────────────────────────┐
-    │                                                  │
-    │    ┌───────────────────┐┌───────────────────┐    │
-    │    │                   ││                   │    │
-    │    │                   ││                   │    │
-    │    │                   ││                   │    │
-    │    │      Results      ││                   │    │
-    │    │                   ││      Preview      │    │
-    │    │                   ││                   │    │
-    │    │                   ││                   │    │
-    │    └───────────────────┘│                   │    │
-    │    ┌───────────────────┐│                   │    │
-    │    │      Prompt       ││                   │    │
-    │    └───────────────────┘└───────────────────┘    │
-    │                                                  │
-    └──────────────────────────────────────────────────┘]] 
+	 │                                                  │
+	 │    ┌───────────────────┐┌───────────────────┐    │
+	 │    │                   ││                   │    │
+	 │    │                   ││                   │    │
+	 │    │                   ││                   │    │
+	 │    │      Results      ││                   │    │
+	 │    │                   ││      Preview      │    │
+	 │    │                   ││                   │    │
+	 │    │                   ││                   │    │
+	 │    └───────────────────┘│                   │    │
+	 │    ┌───────────────────┐│                   │    │
+	 │    │      Prompt       ││                   │    │
+	 │    └───────────────────┘└───────────────────┘    │
+	 │                                                  │
+	 └──────────────────────────────────────────────────┘]] 
 O.HeaderSearch = function () 
 end 
 
@@ -159,4 +163,5 @@ O.maximalNav = function ()
 	O.refreshOutline()
 end 
 
-O.init()
+
+return O 
