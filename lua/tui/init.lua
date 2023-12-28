@@ -1,1 +1,3 @@
-require ("outline")
+local outline = require ("outline")
+
+outline.init()
