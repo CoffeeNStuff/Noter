@@ -14,17 +14,22 @@ function initConfig ()
 	"ContinualFormatting":	false,
 	"AutoIndent":				true,
 	"AutoColapse": 			false,
-	"TextWidth":  				70 
+	"TextWidth":  				70, 
 
 	Syntax: { 
-		first { 
-			"Point":  			"-"
-			"Header0":  		"|" 
-			"Header1":  		"||"  
-			"Header2":  		"|||"  
+		default: { 
+			"Point":  			"-", 
+			"Header0":  		"|", 
+			"Header1":  		"||",   
+			"Header2":  		"|||", 
 
-			"Question":  		"??"  
-			"Comment":  		"*"  
+			"Question":  		"??",
+			"Comment":  		";;",
+
+			"Combos": [
+				"TODO",  
+				"TOREF" 
+			] 
 		} 
 	} 
 } 
