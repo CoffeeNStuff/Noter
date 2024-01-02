@@ -1,7 +1,1 @@
-print "Hola alli" 
---[[ hallo
---bonjourno 
--- 
-|
-|||
-??  ]]
+require("outline")
