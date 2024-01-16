@@ -1,73 +1,57 @@
-require("lfs") 
-local json = require("json") 
+local set =  { 
+	initConfig = function () 
+		local home = os.getenv("HOME") 
+		local file =  io.open(home .. "/.config/Noter/config.json", "w")
 
-function initConfig () 
-	local home = os.getenv("HOME") 
-	lfs.mkdir(home .. "/.config/Noter")
-	lfs.touch(home .. "/.config/Noter/config.json") 
-	local file =  io.open(home .. "/.config/Noter/config.json", "w")
-	
-	file:write([[{ 
-	"ConfigFileLocation": 	"~/.config/Noter/config.json",
-	"NoteFileLocation": 		"~/.config/Noter/config.json", 
-	"Syntax":					"Noter",
-	"ContinualFormatting":	false,
-	"AutoIndent":				true,
-	"AutoColapse": 			false,
-	"TextWidth":  				70, 
+		if file == nil then 
+			os.execute( "mkdir ".. home .. "/.config/Noter")
+			os.execute( "touch " .. home .. "/.config/Noter/config.json") 
+			file =  io.open(home .. "/.config/Noter/config.json", "w")
+		else 
+			return 
+		end 
 
-	Syntax: { 
-		default: { 
-			"Point":  			"-", 
-			"Header0":  		"|", 
-			"Header1":  		"||",   
-			"Header2":  		"|||", 
+		
+		file:write([[{ 
+		"ConfigFileLocation": 	"~/.config/Noter/config.json",
+		"Syntax":					"Noter",
+		
+		Syntax: { 
+			default: [ 
+				{"name": "Header0", "c": "|", "pri": 0 }, 
+				{"name": "Header1", "c": "||", "pri": 1 }, 
+				{"name": "Header2", "c": "|||", "pri": 2 }, 
+				{"name": "Point",   "c": "-", "pri": 3 }, 
+				{"name": "Question", "c": "??", "pri": 3 },  
+				{"name": "To Read on", "c": ";;", "pri": 3 }, 
+			],  
 
-			"Question":  		"??",
-			"Comment":  		";;",
-
-			"Combos": [
-				"TODO",  
-				"TOREF" 
+			Responsio: [ 
+				{"name": "Question", "c": "|", "pri": 1 }, 
+				{"name": "Thesis", "c": "~", "pri": 2 } 
+				{"name": "Objection", "c": "-", "pri": 3 } 
+				{"name": "Response", "c": "+", "pri": 3}
 			] 
 		} 
 	} 
-} 
-	]]) 
-	file:close()
-end 
+		]]) 
+		file:close()
+	end,
 
+	getSyntax = function () -- TODO custom syntax 
+		local default = { 
+			{name = "Header0", c = "|", pri = 0 }, 
+			{name = "Header1", c = "||", pri = 1 }, 
+			{name = "Header2", c = "|||", pri = 2 }, 
+			{name = "Point",   c = "-", pri = 3 }, 
+			{name = "Question", c =  "??", pri = 3 },  
+			{name = "To Read on", c = ";;", pri =  3 }, 
+		} 
 
-function getCurrSet () 
-	local home = os.getenv("HOME") 
-	local file =  io.open(home .. "/.config/Noter/config.json", "r")
-
-	if file == nil then 
-		initConfig() 	
-		file =  io.open(home .. "/.config/Noter/config.json", "r")
+		return table.sort(default, function (a, b) 
+			return a.pri < b.pri
+		end) 
 	end 
+} 
 
-	return json.decode(file:read("a"))
-end 
-
---[[
- ┌──Control Panel───────┐
- │Setting - Value       │
- │Setting - Value       │
- │Setting - Value       │
- │Setting - Value       │
- │Setting - Value       │
- │Setting - Value       │
- │Setting - Value       │
- │Setting - Value       │
- │Setting - Value       │
- │                      │
- │                      │
- │                      │
- │                      │
- │                      │
- │--- File.txt ---      │
- └──────────────────────┘]]
-function modSet () 
-	local sets = getCurrSet () 
-end 
+return set
