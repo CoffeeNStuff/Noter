@@ -49,6 +49,7 @@ O.init = function ()
 		ui.nvim_buf_set_keymap(O.buf, 'n', '<Tab>', ':lua noterToggle()<CR>', { silent = true }) 
 		ui.nvim_buf_set_keymap(O.buf, 'n', '=', ':lua noterProgress()<CR>', { silent = true }) 
 		ui.nvim_buf_set_keymap(O.buf, 'n', '-', ':lua noterRegress()<CR>', { silent = true }) 
+		ui.nvim_buf_set_keymap(O.buf, 'n', '0', ':lua noterRefreshLine()<CR>', { silent = true }) 
 
 		ui.nvim_buf_set_keymap(O.buf, 'n', 's', ':lua noterSets()<CR>', { silent = true }) 
 end 
@@ -131,13 +132,6 @@ O.refreshOutline = function()
 	end 
 end 
 
-function noterClose () 
-	if O.open == true then 
-		O.open = false 
-		ui.nvim_win_close(O.win, true) 
-		ui.nvim_buf_delete(O.buf, { force = true }) 
-	end 
-end 
 
 function  noterProgress () 
 
@@ -264,79 +258,102 @@ end
 
 
 function  noterToggle () 
-	local currLine = ui.nvim_win_get_cursor(O.win)[1] - 2 -- adjusted to be real index of currSections
-	local absPoint = O.sections[O.currSections[currLine][5]]
+	local currLine = ui.nvim_win_get_cursor(O.win)[1] - 2
+	local focusedPoint = O.currSections[currLine]
 
-	if absPoint[5] + 1 > #O.sections then	-- in case this section is the last section absolutely
-		print 'no subsections1' 
-		return
-	elseif O.sections[absPoint[5] + 1][2] ~= absPoint[2] + 1 then	-- in case there are no subsections
-		print 'no subsections2' 
-		return
-	--[[ 
-	elseif pri(O.sections[absPoint[5] + 1][1]) == pri(absPoint[1]) + 1 then -- open lower priority sections TODO 
-	]] 
-
-	elseif currLine + 1 <= #O.currSections and O.currSections[currLine + 1][2] == absPoint[2] + 1 then -- close point 
-
-		local numOfSubPoints = 0 
-		for i = currLine + 1, #O.currSections do
-			if O.currSections[i][2] == absPoint[2] then
-				break
-			else 
-				numOfSubPoints = numOfSubPoints + 1
-			end 
-		end 
-
-		for i = 1, numOfSubPoints do 
-			table.remove(O.currSections, currLine + i) 
-			table.remove(O.currLines, currLine + 2 + i) 
-		end 
-
-		ui.nvim_buf_set_lines(O.buf, currLine + 2, currLine + 2 + numOfSubPoints, false, {}) 
-
-	---ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, {}) 
-	---ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, O.currLines) 
-	elseif O.sections[absPoint[5] + 1][2] == absPoint[2] + 1 then -- open subsections 
-
+	if focusedPoint[5] == #O.sections then
+		print 'no subsections' 
+	 	return 	
+	end 
+	
+	if currLine + 1 > #O.currSections  
+		or O.currSections[currLine + 1][6] == focusedPoint[6]  
+		or O.currSections[currLine + 1][2] == focusedPoint[2]   then  -- in case the point is closed 
+		print 'opening lul' 
+		
 		local newSections = {} 
-		for i = absPoint[5] + 1, #O.sections do 
-			if O.sections[i][2] == absPoint[2] + 1 then
-				newSections[#newSections + 1] = O.sections[i]
-			elseif O.sections[i][2] == absPoint[2] then
+
+		local i = focusedPoint[5] + 1
+		while i < #O.sections do
+			if O.sections[i][6] <= focusedPoint[6] then
 				break
+			elseif O.sections[i][6] == focusedPoint[6] + 1 then 
+				newSections[#newSections + 1] = O.sections[i]
+				i = i + 1
+				while i < #O.sections do 
+					if O.sections[i][6] <=  focusedPoint[6] + 1 then
+						break
+					else 
+						i = i + 1
+					end 
+				end 
+
+			elseif O.sections[i][2] <= focusedPoint[2] + 1 then
+				newSections[#newSections + 1] = O.sections[i]
+				i = i + 1
+			else 
+				i = i + 1
 			end 
-		end
+		end 
 
-
-		local newLines = {} 
+		newLines = {} 
 		for i = 1, #newSections do 
-			newLines[#newLines + 1] = string.rep('\t', newSections[i][2] - O.currDepth) .. newSections[i][4]
+			newLines[#newLines + 1] = ' | ' .. string.rep('\t', newSections[i][2] - focusedPoint[2] + 1) .. newSections[i][4]
 		end 
 
-		for i = 1, #newSections do 
-			table.insert(O.currSections, currLine + i, newSections[i]) 
+		for ii = 1, #newSections do
+			table.insert(O.currSections, currLine + ii, newSections[ii]) 
+			table.insert(O.currLines, currLine + ii + 2, newLines[ii]) 
 		end 
 
-		for i = 1, #newLines do 
-			table.insert(O.currLines, currLine + i + 2, newLines[i]) 
+		ui.nvim_buf_set_lines(O.buf, currLine + 2, currLine + 2, false, newLines) 
+
+	else -- in case the point is open 
+		print 'closing brug' 
+			local i = currLine + 1
+
+			while i < #O.currSections do 
+				if O.currSections[i][6] <= focusedPoint[6] and O.currSections[i][2] <= focusedPoint[2]  then
+					break
+				else 
+					i = i + 1
+				end 
+			end 
+
+		
+		for ii = currLine + 1, i - 1 do 
+			table.remove(O.currSections, currLine + 1)
+			table.remove(O.currLines, currLine + 3)
 		end 
-
-		ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, O.currLines) 
-
-	else 
-		print "no subsections" 
-		return
+		
+		ui.nvim_buf_set_lines(O.buf, currLine + 2, i + 1, false, {}) 
 	end 
 end 
 
-function noterSubmit () 
-	local i = ui.nvim_win_get_cursor(O.win)[1]
-	noterClose() 
-	ui.nvim_win_set_cursor(O.NotesWindow, { O.currSections[i - 2][3], O.currSections[i - 2][2] + 1})	
+function noterRefreshLine () 
+	ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, O.currLines) 
 end 
 
-function minimalNav () 
+function noterSubmit () 
+	local currLine = ui.nvim_win_get_cursor(O.win)[1] 
+	noterClose() 
+	if currLine <= 2 then
+		return
+	else 
+		currLine = currLine - 2
+		ui.nvim_win_set_cursor(O.NotesWindow, { O.currSections[currLine][3], O.currSections[currLine][2] + 1})	
+	end 
+end 
+
+function noterClose () 
+	if O.open == true then 
+		O.open = false 
+		ui.nvim_win_close(O.win, true) 
+		ui.nvim_buf_delete(O.buf, { force = true }) 
+	end 
+end 
+
+function noterOpen () 
 	if O.open == true then 
 		return
 	end 
