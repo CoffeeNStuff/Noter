@@ -50,6 +50,7 @@ O.init = function ()
 		ui.nvim_buf_set_keymap(O.buf, 'n', '=', ':lua noterProgress()<CR>', { silent = true }) 
 		ui.nvim_buf_set_keymap(O.buf, 'n', '-', ':lua noterRegress()<CR>', { silent = true }) 
 		ui.nvim_buf_set_keymap(O.buf, 'n', '0', ':lua noterRefreshLine()<CR>', { silent = true }) 
+		ui.nvim_buf_set_keymap(O.buf, 'n', '1', ':lua noterSnap()<CR>', { silent = true }) 
 
 		ui.nvim_buf_set_keymap(O.buf, 'n', 's', ':lua noterSets()<CR>', { silent = true }) 
 end 
@@ -134,7 +135,6 @@ end
 
 
 function  noterProgress () 
-
 	local currLine = ui.nvim_win_get_cursor(O.win)[1] - 2	
 	if currLine < 0 then	-- in the case cursor hovers non-section
 		print 'no subsections' 
@@ -152,7 +152,7 @@ function  noterProgress ()
 
 	local i = headerPoint[5] + 1
 	while i < #O.sections do
-		if O.sections[i][6] <= headerPoint[6] then
+		if O.sections[i][6] < headerPoint[6] then
 			break
 		elseif O.sections[i][6] == headerPoint[6] + 1 then 
 			newSections[#newSections + 1] = O.sections[i]
@@ -164,10 +164,11 @@ function  noterProgress ()
 					i = i + 1
 				end 
 			end 
-
 		elseif O.sections[i][2] <= headerPoint[2] + 1 then
 			newSections[#newSections + 1] = O.sections[i]
 			i = i + 1
+		elseif O.sections[i][6] == headerPoint[6] then
+			break
 		else 
 			i = i + 1
 		end 
@@ -177,7 +178,11 @@ function  noterProgress ()
 	ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, {}) 
 	O.currLines = {} 
 	for i = 1, #newSections do 
-		O.currLines[#O.currLines + 1] = string.rep('\t', newSections[i][2] - headerPoint[2]) .. newSections[i][4]
+		if #newSections[i][4] < 70 - (headerPoint[2] * 3) then
+			O.currLines[#O.currLines + 1] = string.rep('\t', newSections[i][2] - headerPoint[2]) .. newSections[i][4]
+		else 
+			O.currLines[#O.currLines + 1] = string.rep('\t', newSections[i][2] - headerPoint[2]) .. string.sub(newSections[i][4], 1, 66 - (headerPoint[2] * 3)) .. ' ... '
+		end 
 	end 
 
 	if #headerPoint[4] > 40 then
@@ -205,7 +210,7 @@ function noterRegress ()
 	local i = headerPoint[5]
 	local newHeaderPoint = { "unused", 0, 0, O.fileName , 0, 0, 0 }
 	while i > 0 do
-		if O.sections[i][2] + 1 == headerPoint[2] or O.sections[i][6] + 1== headerPoint[6]  then
+		if O.sections[i][2] + 1 == headerPoint[2] or O.sections[i][6] + 1 == headerPoint[6]  then
 			newHeaderPoint = O.sections[i]
 			break
 		else 
@@ -215,7 +220,7 @@ function noterRegress ()
 
 	i = i + 1
 	while i < #O.sections do
-		if O.sections[i][6] <= newHeaderPoint[6] then
+		if O.sections[i][6] < newHeaderPoint[6] then
 			break
 		elseif O.sections[i][6] == newHeaderPoint[6] + 1 then 
 			newSections[#newSections + 1] = O.sections[i]
@@ -227,10 +232,11 @@ function noterRegress ()
 					i = i + 1
 				end 
 			end 
-
 		elseif O.sections[i][2] <= newHeaderPoint[2] + 1 then
 			newSections[#newSections + 1] = O.sections[i]
 			i = i + 1
+		elseif O.sections[i][6] == newHeaderPoint[6] then
+			break
 		else 
 			i = i + 1
 		end 
@@ -239,7 +245,11 @@ function noterRegress ()
 	ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, {}) 
 	O.currLines = {} 
 	for i = 1, #newSections do 
-		O.currLines[#O.currLines + 1] = string.rep('\t', newSections[i][2] - (newHeaderPoint[2] + 1)) .. newSections[i][4]
+		if #newSections[i][4] < 70 - (newHeaderPoint[2] * 3) then
+			O.currLines[#O.currLines + 1] = string.rep('\t', newSections[i][2] - newHeaderPoint[2]) .. newSections[i][4]
+		else 
+			O.currLines[#O.currLines + 1] = string.rep('\t', newSections[i][2] - newHeaderPoint[2]) .. string.sub(newSections[i][4], 1, 66 - (newHeaderPoint[2] * 3)) .. ' ... '
+		end 
 	end 
 	
 	if #newHeaderPoint[4] > 40 then
@@ -269,13 +279,12 @@ function  noterToggle ()
 	if currLine + 1 > #O.currSections  
 		or O.currSections[currLine + 1][6] == focusedPoint[6]  
 		or O.currSections[currLine + 1][2] == focusedPoint[2]   then  -- in case the point is closed 
-		print 'opening lul' 
 		
 		local newSections = {} 
 
 		local i = focusedPoint[5] + 1
 		while i < #O.sections do
-			if O.sections[i][6] <= focusedPoint[6] then
+			if O.sections[i][6] < focusedPoint[6] then
 				break
 			elseif O.sections[i][6] == focusedPoint[6] + 1 then 
 				newSections[#newSections + 1] = O.sections[i]
@@ -291,6 +300,8 @@ function  noterToggle ()
 			elseif O.sections[i][2] <= focusedPoint[2] + 1 then
 				newSections[#newSections + 1] = O.sections[i]
 				i = i + 1
+			elseif O.sections[i][6] == focusedPoint[6] then
+				break
 			else 
 				i = i + 1
 			end 
@@ -298,7 +309,11 @@ function  noterToggle ()
 
 		newLines = {} 
 		for i = 1, #newSections do 
-			newLines[#newLines + 1] = ' | ' .. string.rep('\t', newSections[i][2] - focusedPoint[2] + 1) .. newSections[i][4]
+			if #newSections[i][4] < 70 - (focusedPoint[2] * 3) then
+				newLines[#newLines + 1] = ' | ' .. string.rep('\t', (newSections[i][2] - focusedPoint[2]) - 1) .. newSections[i][4]
+			else 
+				newLines[#newLines + 1] = ' | ' .. string.rep('\t', (newSections[i][2] - focusedPoint[2]) - 1) .. string.sub(newSections[i][4], 1, 66 - (focusedPoint[2] * 3)) .. '...'
+			end 
 		end 
 
 		for ii = 1, #newSections do
@@ -309,7 +324,6 @@ function  noterToggle ()
 		ui.nvim_buf_set_lines(O.buf, currLine + 2, currLine + 2, false, newLines) 
 
 	else -- in case the point is open 
-		print 'closing brug' 
 			local i = currLine + 1
 
 			while i < #O.currSections do 
@@ -328,6 +342,81 @@ function  noterToggle ()
 		
 		ui.nvim_buf_set_lines(O.buf, currLine + 2, i + 1, false, {}) 
 	end 
+end 
+
+function noterSnap () 
+	local currLine = ui.nvim_win_get_cursor(O.NotesWindow)[1] 
+
+	local closestPointIndex = 0 
+	while closestPointIndex < #O.sections do 
+		closestPointIndex = closestPointIndex + 1
+		if O.sections[closestPointIndex][3] >= currLine then
+			break
+		end 
+	end 
+
+	closestPoint = O.sections[closestPointIndex] 
+
+	local newSections = {}  
+
+	local newHeaderPoint = { "unused", 0, 0, O.fileName , 0, 0, 0 }
+	local i = closestPointIndex
+	while i > 0 do
+		if O.sections[i][2] + 1 == closestPoint[2] or O.sections[i][6] + 1 == closestPoint[6]  then
+			newHeaderPoint = O.sections[i]
+			break
+		else 
+			i = i - 1
+		end 
+	end 
+
+	i = i + 1
+	while i < #O.sections do
+		if O.sections[i][6] < newHeaderPoint[6] then
+			break
+		elseif O.sections[i][6] == newHeaderPoint[6] + 1 then 
+			newSections[#newSections + 1] = O.sections[i]
+			i = i + 1
+			while i < #O.sections do 
+				if O.sections[i][6] <=  newHeaderPoint[6] + 1 then
+					break
+				else 
+					i = i + 1
+				end 
+			end 
+
+		elseif O.sections[i][2] <= newHeaderPoint[2] + 1 then
+			newSections[#newSections + 1] = O.sections[i]
+			i = i + 1
+		elseif O.sections[i][6] == newHeaderPoint[6] then
+			break
+		else 
+			i = i + 1
+		end 
+	end 
+
+	ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, {}) 
+	O.currLines = {} 
+	for i = 1, #newSections do 
+		if #newSections[i][4] < 70 - (newHeaderPoint[2] * 3) then
+			O.currLines[#O.currLines + 1] = string.rep('\t', newSections[i][2] - newHeaderPoint[2]) .. newSections[i][4]
+		else 
+			O.currLines[#O.currLines + 1] = string.rep('\t', newSections[i][2] - newHeaderPoint[2]) .. string.sub(newSections[i][4], 1, 66 - (newHeaderPoint[2] * 3)) .. ' ... '
+		end 
+	end 
+	
+	if #newHeaderPoint[4] > 40 then
+		table.insert(O.currLines, 1, string.sub(newHeaderPoint[4], 1, 35) .. ' ... ')
+		table.insert(O.currLines, 2, string.rep('-', 40)) 
+	else 
+		table.insert(O.currLines, 1, newHeaderPoint[4])
+		table.insert(O.currLines, 2, string.rep('-', #O.currLines[1]))
+	end 
+
+
+	O.currSections = newSections
+
+	ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, O.currLines) 
 end 
 
 function noterRefreshLine () 
