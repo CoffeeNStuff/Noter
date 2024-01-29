@@ -97,40 +97,38 @@ O.refreshOutline = function()
 
 	O.currSections = {} 
 	O.currLines = {} 
-	local i = 0
+
+	local i = 1
+	local currPoint = O.sections[1] 
 	while i < #O.sections do
-		i = i + 1
-		if O.sections[i][6] == O.currPri then
-			O.currSections[#O.currSections + 1] = O.sections[i] 
-			O.currLines[#O.currLines + 1] = string.rep('\t', O.sections[i][2] - O.currDepth - 1) .. O.sections[i][4]
-
+		O.currSections[#O.currSections + 1] = O.sections[i] 
+		currPoint = O.sections[i] 
+		while i < #O.sections do 
 			i = i + 1
-			while i < #O.sections do
-				if O.sections[i][6] == O.currPri then 
-					i = i - 1
-					break
-				else 
-					i = i + 1
-				end 
+			if	O.sections[i][6] <= currPoint[6] and  
+				O.sections[i][2] <= currPoint[2]  then
+				break 
 			end 
-
-		elseif O.sections[i][6] < O.currPri then 
-			break 		
-		elseif O.sections[i][2] == O.currDepth then
-			O.currSections[#O.currSections + 1] = O.sections[i] 
-			O.currLines[#O.currLines + 1] = string.rep('\t', O.sections[i][2] - O.currDepth - 1) .. O.sections[i][4]
 		end 
+	end 
+	
+	for i = 1, #O.currSections do 
+		if #O.currSections[i][4] < 70 then
+			O.currLines[#O.currLines + 1] = O.currSections[i][4]
+		else 
+			O.currLines[#O.currLines + 1] =  O.currSections[i][2] ..  ' ... '
+		end 
+	end 
+
+	if #O.fileName > 40 then 
+		table.insert(O.currLines, 1, O.fileName .. ' ... ') 
+		table.insert(O.currLines, 2, string.rep('-', 40)) 
+	else 
+		table.insert(O.currLines, 1, O.fileName) 
+		table.insert(O.currLines, 2, string.rep('-', #O.fileName)) 
 	end
 
-	if O.currDepth == 0 then 
-		if #O.fileName > 40 then 
-			table.insert(O.currLines, 1, O.fileName .. ' ... ') 
-			table.insert(O.currLines, 2, string.rep('-', 40)) 
-		else 
-			table.insert(O.currLines, 1, O.fileName) 
-			table.insert(O.currLines, 2, string.rep('-', #O.fileName)) 
-		end
-	end 
+	ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, O.currLines) 
 end 
 
 
@@ -148,33 +146,30 @@ function  noterProgress ()
 		return
 	end 
 
+
+
 	local newSections = {} 
 
 	local i = headerPoint[5] + 1
+	local currPoint  = headerPoint
 	while i < #O.sections do
-		if O.sections[i][6] < headerPoint[6] then
-			break
-		elseif O.sections[i][6] == headerPoint[6] + 1 then 
-			newSections[#newSections + 1] = O.sections[i]
+	   if	O.sections[i][6] <= headerPoint[6] and 
+			O.sections[i][2] <= headerPoint[2] then
+			break 
+		end 
+
+		newSections[#newSections + 1] = O.sections[i] 
+		currPoint = O.sections[i] 
+		while i < #O.sections do 
 			i = i + 1
-			while i < #O.sections do 
-				if O.sections[i][6] <=  headerPoint[6] + 1 then
-					break
-				else 
-					i = i + 1
-				end 
+			if	O.sections[i][6] <= currPoint[6] and  
+				O.sections[i][2] <= currPoint[2]  then
+				break 
 			end 
-		elseif O.sections[i][2] <= headerPoint[2] + 1 then
-			newSections[#newSections + 1] = O.sections[i]
-			i = i + 1
-		elseif O.sections[i][6] == headerPoint[6] then
-			break
-		else 
-			i = i + 1
 		end 
 	end 
-	O.currSections = newSections
 
+	O.currSections = newSections
 	ui.nvim_buf_set_lines(O.buf, 0, #O.currLines, false, {}) 
 	O.currLines = {} 
 	for i = 1, #newSections do 
@@ -277,35 +272,32 @@ function  noterToggle ()
 	end 
 	
 	if currLine + 1 > #O.currSections  
-		or O.currSections[currLine + 1][6] == focusedPoint[6]  
-		or O.currSections[currLine + 1][2] == focusedPoint[2]   then  -- in case the point is closed 
+		or (O.currSections[currLine + 1][2] == focusedPoint[2]
+		and O.currSections[currLine + 1][6] == focusedPoint[6])
+		or O.currSections[currLine + 1] == nil then  -- in case the point is closed 
 		
 		local newSections = {} 
 
-		local i = focusedPoint[5] + 1
-		while i < #O.sections do
-			if O.sections[i][6] < focusedPoint[6] then
-				break
-			elseif O.sections[i][6] == focusedPoint[6] + 1 then 
-				newSections[#newSections + 1] = O.sections[i]
-				i = i + 1
-				while i < #O.sections do 
-					if O.sections[i][6] <=  focusedPoint[6] + 1 then
-						break
-					else 
-						i = i + 1
-					end 
-				end 
+	local i = focusedPoint[5] + 1
+	local currPoint  = focusedPoint
+	while i < #O.sections do
+	   if	O.sections[i][6] <= focusedPoint[6] and 
+			O.sections[i][2] <= focusedPoint[2] then
+			break 
+		end 
 
-			elseif O.sections[i][2] <= focusedPoint[2] + 1 then
-				newSections[#newSections + 1] = O.sections[i]
-				i = i + 1
-			elseif O.sections[i][6] == focusedPoint[6] then
-				break
-			else 
-				i = i + 1
+		newSections[#newSections + 1] = O.sections[i] 
+		currPoint = O.sections[i] 
+		while i < #O.sections do 
+			i = i + 1
+			if	O.sections[i][6] <= currPoint[6] and  
+				O.sections[i][2] <= currPoint[2]  then
+				break 
 			end 
 		end 
+	end 
+
+	
 
 		newLines = {} 
 		for i = 1, #newSections do 
@@ -326,8 +318,9 @@ function  noterToggle ()
 	else -- in case the point is open 
 			local i = currLine + 1
 
-			while i < #O.currSections do 
-				if O.currSections[i][6] <= focusedPoint[6] and O.currSections[i][2] <= focusedPoint[2]  then
+			while i < #O.currSections + 1 do 
+				if O.currSections[i][6] <= focusedPoint[6] and O.currSections[i][2] <= focusedPoint[2] then
+					print(i) 
 					break
 				else 
 					i = i + 1
