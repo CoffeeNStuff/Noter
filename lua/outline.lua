@@ -431,7 +431,7 @@ function noterSubmit ()
 		return
 	else 
 		currLine = currLine - 2
-		ui.nvim_win_set_cursor(O.NotesWindow, { O.currSections[currLine][3], O.currSections[currLine][1] + 1})	
+		ui.nvim_win_set_cursor(O.NotesWindow, { O.currSections[currLine][2], O.currSections[currLine][1] + 1})	
 	end 
 end 
 
